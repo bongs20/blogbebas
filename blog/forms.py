@@ -12,6 +12,36 @@ class RegisterForm(UserCreationForm):
         model = User
         fields = ['username', 'email', 'password1', 'password2']
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Labels (ID)
+        self.fields['username'].label = 'Nama pengguna'
+        self.fields['email'].label = 'Email'
+        self.fields['password1'].label = 'Kata sandi'
+        self.fields['password2'].label = 'Ulangi kata sandi'
+        # Placeholders & classes
+        self.fields['username'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Nama pengguna',
+            'autocomplete': 'username',
+            'autofocus': 'autofocus',
+        })
+        self.fields['email'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Email',
+            'autocomplete': 'email',
+        })
+        self.fields['password1'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Kata sandi',
+            'autocomplete': 'new-password',
+        })
+        self.fields['password2'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Ulangi kata sandi',
+            'autocomplete': 'new-password',
+        })
+
 
 class PostForm(forms.ModelForm):
     attachment = forms.FileField(required=False)

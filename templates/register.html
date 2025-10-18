@@ -1,12 +1,45 @@
 {% extends 'base.html' %}
-{% load form_extras %}
 {% block content %}
-  <h1>Register</h1>
-  <form method="post">{% csrf_token %}
-  <div class="mb-3">{{ form.username|add_class:'form-control' }}</div>
-  <div class="mb-3">{{ form.email|add_class:'form-control' }}</div>
-  <div class="mb-3">{{ form.password1|add_class:'form-control' }}</div>
-  <div class="mb-3">{{ form.password2|add_class:'form-control' }}</div>
-    <button class="btn btn-primary">Register</button>
+  <h1>Daftar</h1>
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    <div class="mb-3">
+      <label class="form-label" for="id_username">Nama pengguna</label>
+      {{ form.username }}
+      {% if form.username.errors %}
+        <div class="invalid-feedback d-block">{{ form.username.errors|join:', ' }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label" for="id_email">Email</label>
+      {{ form.email }}
+      {% if form.email.errors %}
+        <div class="invalid-feedback d-block">{{ form.email.errors|join:', ' }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label" for="id_password1">Kata sandi</label>
+      {{ form.password1 }}
+      {% if form.password1.errors %}
+        <div class="invalid-feedback d-block">{{ form.password1.errors|join:', ' }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label" for="id_password2">Ulangi kata sandi</label>
+      {{ form.password2 }}
+      {% if form.password2.errors %}
+        <div class="invalid-feedback d-block">{{ form.password2.errors|join:', ' }}</div>
+      {% endif %}
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">{{ form.non_field_errors|join:' ' }}</div>
+    {% endif %}
+
+    <button class="btn btn-primary" type="submit">Daftar</button>
   </form>
 {% endblock %}
