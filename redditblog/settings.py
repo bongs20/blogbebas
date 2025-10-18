@@ -5,12 +5,17 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-redditblog-secret-key-for-local'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-redditblog-secret-key-for-local')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Default True for local; set DEBUG=False in Render env
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ["blogbebas.onrender.com", "127.0.0.1"]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "blogbebas.onrender.com"]
+# Render will set RENDER_EXTERNAL_HOSTNAME
+render_host = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if render_host and render_host not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(render_host)
 
 # Application definition
 INSTALLED_APPS = [
@@ -26,6 +31,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -89,11 +95,31 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# Use WhiteNoise for serving static files in production
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# If running behind a proxy (Render), trust X-Forwarded-Proto for secure requests
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 LOGIN_URL = '/login/'
+
+# Optional: allow overriding data directories on Render Disk
+DATA_DIR = os.environ.get('DATA_DIR')
+if DATA_DIR:
+    # Persist SQLite DB and media on mounted disk (set DATA_DIR env to mount path)
+    DATABASES['default']['NAME'] = str(Path(DATA_DIR) / 'db.sqlite3')
+    MEDIA_ROOT = str(Path(DATA_DIR) / 'media')
