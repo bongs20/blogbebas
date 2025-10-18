@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: blogbebas
+    env: python
+    plan: free
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+    startCommand: |
+      python manage.py migrate && \
+      (python - <<'PY'
+import os
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'redditblog.settings')
+import django
+django.setup()
+from blog.models import Post
+import sys
+sys.exit(0 if Post.objects.count()==0 else 1)
+PY
+       && python manage.py seed_demo || true) && \
+      gunicorn redditblog.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: DATA_DIR
+        value: /var/data
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1
