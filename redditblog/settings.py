@@ -10,7 +10,7 @@ SECRET_KEY = 'django-insecure-redditblog-secret-key-for-local'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["blogbebas.onrender.com"]
+ALLOWED_HOSTS = ["blogbebas.onrender.com", "127.0.0.1"]
 
 # Application definition
 INSTALLED_APPS = [
