@@ -1,3 +1,5 @@
+<img width="1263" height="657" alt="image" src="https://github.com/user-attachments/assets/91591bd3-5869-4dbf-9a87-d8f3c0cd2661" />
+
 BlogBebas - expressive micro blog with voting (Django)
 
 BlogBebas is a simple, expressive blogging platform where users can post, comment, and vote. It supports categories, profiles with avatars, and media attachments.
