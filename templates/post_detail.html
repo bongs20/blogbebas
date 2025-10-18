@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% load media_extras %}
+{% block content %}
+  <h1 class="mb-1">{{ post.title }}</h1>
+  <p class="text-muted d-flex align-items-center gap-2">
+    {% if post.author.profile.avatar %}
+      <img src="{{ post.author.profile.avatar.url }}" alt="avatar" class="rounded-circle" width="24" height="24">
+    {% else %}
+      <img src="/static/img/default-avatar.svg" alt="avatar" class="rounded-circle" width="24" height="24">
+    {% endif %}
+    by <a href="{% url 'profile' post.author.username %}">{{ post.author }}</a> {% if post.author.is_staff %}<span class="badge text-bg-warning">Admin</span>{% endif %} • {{ post.created_at|naturaltime }}
+  {% if post.category %} • <a href="{% url 'category' post.category.slug %}">{{ post.category.name }}</a>{% if post.category.is_verified %} <i class="bi bi-patch-check-fill text-info" title="Verified"></i>{% endif %}{% endif %}
+  </p>
+  <div class="mb-3">{{ post.content|linebreaks }}</div>
+  {% if post.attachments.all %}
+    <div class="mb-3">
+      {% for att in post.attachments.all %}
+        {% if att.file %}
+          {% if att.file.name|is_image %}
+            <img src="{{ att.file.url }}" class="img-fluid rounded mb-2" alt="attachment">
+          {% elif att.file.name|is_video %}
+            <video class="w-100 mb-2" controls src="{{ att.file.url }}"></video>
+          {% elif att.file.name|is_audio %}
+            <audio class="w-100 mb-2" controls src="{{ att.file.url }}"></audio>
+          {% else %}
+            <div><a href="{{ att.file.url }}" target="_blank">Download attachment</a></div>
+          {% endif %}
+        {% elif att.url %}
+          <div><a href="{{ att.url }}" target="_blank">{{ att.url }}</a></div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="d-flex gap-2 mb-3 align-items-center">
+    <form action="{% url 'vote' post.pk 'up' %}" method="post">{% csrf_token %}<button class="btn btn-sm btn-success"><i class="bi bi-hand-thumbs-up"></i></button></form>
+    <form action="{% url 'vote' post.pk 'down' %}" method="post">{% csrf_token %}<button class="btn btn-sm btn-danger"><i class="bi bi-hand-thumbs-down"></i></button></form>
+    <span class="badge bg-secondary ms-2">Score: {{ post.score }}</span>
+    {% if user == post.author or user.is_staff %}
+      <a href="{% url 'post_edit' post.pk %}" class="btn btn-sm btn-primary ms-2">Edit</a>
+      <form action="{% url 'post_delete' post.pk %}" method="post" class="d-inline">{% csrf_token %}<button class="btn btn-sm btn-danger">Delete</button></form>
+    {% endif %}
+  </div>
+
+  <hr>
+  <h4>Comments</h4>
+  {% for comment in comments %}
+    <div class="border rounded p-2 mb-2">
+      <div class="d-flex align-items-center gap-2 mb-1">
+        {% if comment.author.profile.avatar %}
+          <img src="{{ comment.author.profile.avatar.url }}" alt="avatar" class="rounded-circle" width="20" height="20">
+        {% else %}
+          <img src="/static/img/default-avatar.svg" alt="avatar" class="rounded-circle" width="20" height="20">
+        {% endif %}
+        <small class="text-muted">by <a href="{% url 'profile' comment.author.username %}">{{ comment.author }}</a> • {{ comment.created_at|naturaltime }}</small>
+      </div>
+      <p class="mb-1">{{ comment.content }}</p>
+      {% if user == comment.author or user.is_staff %}
+        <form action="{% url 'comment_delete' comment.pk %}" method="post" class="d-inline ms-2">{% csrf_token %}<button class="btn btn-sm btn-link text-danger">Delete</button></form>
+      {% endif %}
+    </div>
+  {% empty %}
+    <p>No comments yet.</p>
+  {% endfor %}
+
+  <hr>
+  {% if user.is_authenticated %}
+    <h5>Add a comment</h5>
+    <form method="post" enctype="multipart/form-data">{% csrf_token %}
+      <div class="mb-3">{{ form.content }}</div>
+      <div class="mb-3">
+        <label class="form-label">Attachment (optional)</label>
+        {{ form.attachment }}
+        <div class="form-text">Or paste a URL</div>
+        {{ form.attachment_url }}
+      </div>
+      <button class="btn btn-primary"><i class="bi bi-send"></i> Post Comment</button>
+    </form>
+  {% else %}
+    <p><a href="{% url 'login' %}">Login</a> to comment.</p>
+  {% endif %}
+{% endblock %}

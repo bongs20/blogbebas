@@ -1,0 +1,11 @@
+/* Custom styles for BlogBebas */
+body { padding-bottom: 40px; }
+
+/* Ensure long titles wrap nicely on small screens */
+.card-title a { word-break: break-word; }
+
+/* Reduce padding on small devices */
+@media (max-width: 576px) {
+	.navbar .nav-link { padding-left: .5rem; padding-right: .5rem; }
+	.list-group-item { padding: .5rem .75rem; }
+}

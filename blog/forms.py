@@ -1,0 +1,101 @@
+from django import forms
+from django.utils.text import slugify
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm
+from .models import Post, Comment, Category, UserProfile
+
+
+class RegisterForm(UserCreationForm):
+    email = forms.EmailField(required=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password1', 'password2']
+
+
+class PostForm(forms.ModelForm):
+    attachment = forms.FileField(required=False)
+    attachment_url = forms.URLField(required=False)
+    class Meta:
+        model = Post
+        fields = ['category', 'title', 'content']
+        widgets = {
+            'category': forms.Select(attrs={'class': 'form-select'}),
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 6}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Limit categories to top 20 or search by query 'q'
+        field = self.fields.get('category')
+        if isinstance(field, forms.ModelChoiceField):
+            base = Category.objects.all().order_by('name')
+            q = None
+            if getattr(self, 'data', None):
+                q = self.data.get('q') or None
+            qs = base.filter(name__icontains=q) if q else base
+            # Build a list of IDs to avoid distinct() with sliced queryset
+            ids = list(qs.values_list('pk', flat=True)[:20])
+            # Always include the selected category id (from POST or instance)
+            selected_id = None
+            if getattr(self, 'data', None):
+                cat_val = self.data.get('category')
+                if cat_val:
+                    try:
+                        selected_id = int(cat_val)
+                    except Exception:
+                        selected_id = None
+            if not selected_id and getattr(self.instance, 'category_id', None):
+                selected_id = self.instance.category_id
+            if selected_id and selected_id not in ids:
+                ids.append(selected_id)
+            field.queryset = Category.objects.filter(pk__in=ids).order_by('name')
+
+    def clean(self):
+        cleaned = super().clean()
+        # Normalize URL field
+        url = cleaned.get('attachment_url')
+        if url is not None and isinstance(url, str):
+            cleaned['attachment_url'] = url.strip()
+        return cleaned
+
+    # No approval gating; anyone can select any category
+
+
+class CommentForm(forms.ModelForm):
+    attachment = forms.FileField(required=False)
+    attachment_url = forms.URLField(required=False)
+    class Meta:
+        model = Comment
+        fields = ['content']
+
+
+class CategoryForm(forms.ModelForm):
+    class Meta:
+        model = Category
+        fields = ['name', 'slug']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'slug': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        name = cleaned.get('name')
+        slug = cleaned.get('slug')
+        if name and not slug:
+            cleaned['slug'] = slugify(name)
+        elif slug:
+            cleaned['slug'] = slugify(slug)
+        return cleaned
+
+
+class ProfileForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ['display_name', 'bio', 'avatar']
+        widgets = {
+            'display_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+        }

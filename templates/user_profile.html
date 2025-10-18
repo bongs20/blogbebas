@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block content %}
+  <div class="d-flex align-items-center mb-3 gap-3">
+    {% if profile_user.profile.avatar %}
+      <img src="{{ profile_user.profile.avatar.url }}" alt="avatar" class="rounded-circle" width="64" height="64">
+    {% else %}
+      <img src="/static/img/default-avatar.svg" alt="avatar" class="rounded-circle" width="64" height="64">
+    {% endif %}
+    <div>
+      <h3 class="mb-0">{{ profile_user.profile.display_name|default:profile_user.username }}</h3>
+      <div class="text-muted">
+        @{{ profile_user.username }}
+        {% if badge %}<span class="badge text-bg-{{ badge.1 }} ms-2">{{ badge.0 }}</span>{% endif %}
+        {% if profile_user.is_staff %}<span class="badge text-bg-warning ms-1">Admin</span>{% endif %}
+      </div>
+    </div>
+    <div class="ms-auto">
+      {% if user.is_authenticated and user.username == profile_user.username %}
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'profile_settings' %}"><i class="bi bi-gear"></i> Edit Profile</a>
+      {% endif %}
+    </div>
+  </div>
+  {% if profile_user.profile.bio %}
+    <p>{{ profile_user.profile.bio|linebreaks }}</p>
+  {% endif %}
+
+  <hr>
+  <h5>Posts</h5>
+  {% for post in posts %}
+    <div class="card mb-2">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <a href="{% url 'post_detail' post.pk %}">{{ post.title }}</a>
+          <span class="badge bg-secondary">Score {{ post.score|default:0 }}</span>
+        </div>
+        <div class="text-muted small">{{ post.created_at|naturaltime }} in {% if post.category %}<a href="{% url 'category' post.category.slug %}">r/{{ post.category.slug }}</a>{% else %}r/uncategorized{% endif %}</div>
+      </div>
+    </div>
+  {% empty %}
+    <p>No posts yet.</p>
+  {% endfor %}
+{% endblock %}

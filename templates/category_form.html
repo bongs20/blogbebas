@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h1>Create Category</h1>
+  <form method="post">{% csrf_token %}
+    <div class="mb-3">
+      <label class="form-label">Name</label>
+      {{ form.name }}
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Slug</label>
+      {{ form.slug }}
+      <div class="form-text">Gunakan huruf kecil dan tanda minus, contoh: my-topic</div>
+    </div>
+    <button class="btn btn-primary">Submit</button>
+  </form>
+{% endblock %}

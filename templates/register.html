@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load form_extras %}
+{% block content %}
+  <h1>Register</h1>
+  <form method="post">{% csrf_token %}
+  <div class="mb-3">{{ form.username|add_class:'form-control' }}</div>
+  <div class="mb-3">{{ form.email|add_class:'form-control' }}</div>
+  <div class="mb-3">{{ form.password1|add_class:'form-control' }}</div>
+  <div class="mb-3">{{ form.password2|add_class:'form-control' }}</div>
+    <button class="btn btn-primary">Register</button>
+  </form>
+{% endblock %}

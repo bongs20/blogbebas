@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block content %}
+  <div class="row g-3 g-md-4">
+  <div class="col-12 col-lg-8">
+      <div class="d-flex justify-content-between align-items-center">
+    <h2 class="mb-0">{% if current_category %}{{ current_category.name }}{% else %}Beranda BlogBebas{% endif %}</h2>
+        <div class="btn-group" role="group">
+          <a class="btn btn-sm {% if sort == 'new' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?sort=new">New</a>
+          <a class="btn btn-sm {% if sort == 'top' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?sort=top">Top</a>
+        </div>
+      </div>
+      <hr>
+
+      {% if not current_category and posts_of_the_day %}
+      <div class="mb-4">
+        <h5 class="mb-3">Post of the Day</h5>
+        <div class="list-group">
+          {% for p in posts_of_the_day %}
+            <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" href="{% url 'post_detail' p.pk %}">
+              <span class="text-truncate" style="max-width: 75%">{{ p.title }}</span>
+              <span class="badge rounded-pill text-bg-secondary">{{ p.comments_today|default:0 }} comments</span>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% for post in page_obj %}
+        <div class="card mb-3 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+              <h5 class="card-title mb-1 flex-grow-1"><a href="{% url 'post_detail' post.pk %}" class="text-decoration-none">{{ post.title }}</a></h5>
+              <span class="badge bg-secondary">Score {{ post.score|default:0 }}</span>
+            </div>
+            <div class="text-muted mb-2">
+              <a href="{% if post.category %}{% url 'category' post.category.slug %}{% else %}#{% endif %}" class="text-decoration-none">{% if post.category %}{{ post.category.name }}{% else %}Tanpa Kategori{% endif %}</a>
+              {% if post.category and post.category.is_verified %}<span class="badge text-bg-info ms-1"><i class="bi bi-patch-check-fill"></i> Verified</span>{% endif %}
+              • <span class="align-middle d-inline-flex align-items-center gap-1">
+                {% if post.author.profile.avatar %}
+                  <img src="{{ post.author.profile.avatar.url }}" alt="avatar" class="rounded-circle" width="20" height="20">
+                {% else %}
+                  <img src="/static/img/default-avatar.svg" alt="avatar" class="rounded-circle" width="20" height="20">
+                {% endif %}
+                by <a href="{% url 'profile' post.author.username %}">{{ post.author }}</a>
+              </span>
+              {% if post.author.is_staff %}<span class="badge text-bg-warning">Admin</span>{% endif %}
+              • {{ post.created_at|naturaltime }}
+            </div>
+            <p class="card-text">{{ post.content|truncatechars:200 }}</p>
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'post_detail' post.pk %}"><i class="bi bi-chat"></i> Discuss</a>
+          </div>
+        </div>
+      {% empty %}
+        <p>No posts yet.</p>
+      {% endfor %}
+
+      <nav>
+        <ul class="pagination">
+          {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?sort={{ sort }}&page={{ page_obj.previous_page_number }}">Previous</a></li>
+          {% endif %}
+          <li class="page-item disabled"><a class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</a></li>
+          {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?sort={{ sort }}&page={{ page_obj.next_page_number }}">Next</a></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+  <div class="col-12 col-lg-4">
+      <div class="card mb-3">
+        <div class="card-body">
+          <h5 class="card-title">BlogBebas</h5>
+          <p class="card-text">Tempat kamu bisa mengekspresikan diri. Buat post, voting, dan diskusi seru setiap hari.</p>
+          {% if user.is_authenticated %}
+            <a href="{% url 'post_create' %}" class="btn btn-success"><i class="bi bi-plus-circle"></i> New Post</a>
+          {% else %}
+            <a href="{% url 'login' %}" class="btn btn-primary">Login</a>
+            <a href="{% url 'register' %}" class="btn btn-outline-primary ms-2">Register</a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title mb-3">Kategori</h5>
+          <form method="get" class="mb-2">
+            <input type="hidden" name="sort" value="{{ sort }}">
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control" name="q" placeholder="Search categories" value="{{ q|default:'' }}">
+              <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+            </div>
+          </form>
+          <div class="list-group list-group-flush">
+      <a href="/" class="list-group-item list-group-item-action {% if not current_category %}active{% endif %}">Semua</a>
+            {% for cat in categories %}
+              <div class="list-group-item d-flex justify-content-between align-items-center">
+        <a href="{% url 'category' cat.slug %}" class="text-decoration-none {% if current_category and current_category.pk == cat.pk %}fw-semibold{% endif %}">{{ cat.name }} {% if cat.is_verified %}<i class="bi bi-patch-check-fill text-info" title="Verified"></i>{% endif %}</a>
+                {% if user.is_staff %}
+                  <div class="btn-group btn-group-sm">
+                    {% if cat.is_verified %}
+                      <a class="btn btn-outline-secondary" href="{% url 'category_unverify' cat.slug %}" title="Unverify"><i class="bi bi-patch-minus"></i></a>
+                    {% else %}
+                      <a class="btn btn-outline-secondary" href="{% url 'category_verify' cat.slug %}" title="Verify"><i class="bi bi-patch-check"></i></a>
+                    {% endif %}
+          <a class="btn btn-outline-danger" href="{% url 'category_delete' cat.slug %}" title="Delete" onclick="return confirm('Delete category {{ cat.name }}?');"><i class="bi bi-trash"></i></a>
+                  </div>
+                {% endif %}
+              </div>
+            {% empty %}
+              <div class="text-muted">No categories yet.</div>
+            {% endfor %}
+          </div>
+          {% if user.is_authenticated %}
+      <a href="{% url 'category_create' %}" class="btn btn-sm btn-outline-secondary mt-3">Buat kategori</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

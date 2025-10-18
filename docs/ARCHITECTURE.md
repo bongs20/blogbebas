@@ -1,0 +1,25 @@
+# Architecture Overview
+
+- Framework: Django 5, SQLite for dev
+- Apps: single app `blog`
+- Models:
+  - Category(name, slug, created_by, is_verified, created_at)
+  - Post(author, category, title, content, created_at, updated_at)
+  - Comment(post, author, content, created_at)
+  - Vote(post, user, value)
+  - PostAttachment(post, file, url, content_type, created_at)
+  - CommentAttachment(comment, file, url, content_type, created_at)
+  - UserProfile(user, display_name, bio, avatar, created_at)
+- Forms: RegisterForm, PostForm (with attachment fields), CommentForm (with attachment fields), CategoryForm, ProfileForm
+- Views:
+  - Auth: register, login, logout
+  - Home: list posts with score, sort, pagination; categories with search; Posts of the Day
+  - CRUD: posts and comments
+  - Voting: toggle up/down
+  - Categories: create (user), verify/unverify/delete (admin)
+  - Profile: view public profile and edit settings
+- Templates: base, home, post_detail, post_form, auth pages, profile pages, category form
+- Static: site.css, default avatar, favicon
+- Templatetags: form_extras (add_class), media_extras (is_image/is_video/is_audio)
+- Signals: create UserProfile on user creation
+- Management commands: seed_demo to populate users/categories/posts/comments/votes
