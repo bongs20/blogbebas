@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load humanize %}
 {% load media_extras %}
+{% load markdown_extras %}
 {% block content %}
   <h1 class="mb-1">{{ post.title }}</h1>
   <p class="text-muted d-flex align-items-center gap-2">
@@ -12,7 +13,14 @@
     by <a href="{% url 'profile' post.author.username %}">{{ post.author }}</a> {% if post.author.is_staff %}<span class="badge text-bg-warning">Admin</span>{% endif %} • {{ post.created_at|naturaltime }}
   {% if post.category %} • <a href="{% url 'category' post.category.slug %}">{{ post.category.name }}</a>{% if post.category.is_verified %} <i class="bi bi-patch-check-fill text-info" title="Verified"></i>{% endif %}{% endif %}
   </p>
-  <div class="mb-3">{{ post.content|linebreaks }}</div>
+  <div class="mb-3">{{ post.content|markdown_safe|safe }}</div>
+  {% if post.tags.all %}
+    <div class="mb-2">
+      {% for t in post.tags.all %}
+        <span class="badge text-bg-secondary me-1">#{{ t.name }}</span>
+      {% endfor %}
+    </div>
+  {% endif %}
   {% if post.attachments.all %}
     <div class="mb-3">
       {% for att in post.attachments.all %}

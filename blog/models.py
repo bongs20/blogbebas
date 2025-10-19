@@ -10,6 +10,9 @@ class Category(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_categories')
     is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
+    description = models.TextField(blank=True)
+    icon = models.FileField(upload_to='communities/icons/', blank=True, null=True)
+    moderators = models.ManyToManyField(User, related_name='moderated_communities', blank=True)
 
     class Meta:
         verbose_name_plural = 'Categories'
@@ -25,6 +28,9 @@ class Post(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+    # Tags for post (per community)
+    # Declared after Tag class; use string reference to 'Tag'.
+    tags = models.ManyToManyField('Tag', related_name='posts', blank=True)
 
     def score(self):
         # Backward-compatible method; prefer net_score property.
@@ -39,6 +45,21 @@ class Post(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Tag(models.Model):
+    community = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='tags')
+    name = models.CharField(max_length=50)
+    slug = models.SlugField(max_length=60)
+
+    class Meta:
+        unique_together = ('community', 'slug')
+
+    def __str__(self):
+        return f'{self.community.slug}:{self.name}'
+
+
+# (tags field declared on Post via string reference)
 
 
 class Comment(models.Model):

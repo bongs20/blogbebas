@@ -9,3 +9,19 @@ body { padding-bottom: 40px; }
 	.navbar .nav-link { padding-left: .5rem; padding-right: .5rem; }
 	.list-group-item { padding: .5rem .75rem; }
 }
+
+/* Theming */
+:root{
+	--bb-bg:#ffffff; --bb-text:#212529; --bb-card:#ffffff; --bb-border:#e9ecef;
+}
+[data-theme="dark"]{
+	--bb-bg:#0f1115; --bb-text:#e6e6e6; --bb-card:#12151c; --bb-border:#2a2f3a;
+}
+body{ background:var(--bb-bg); color:var(--bb-text); }
+.card{ background:var(--bb-card); border-color:var(--bb-border); }
+.list-group-item{ background:var(--bb-card); border-color:var(--bb-border); }
+.navbar, .dropdown-menu{ border-color:var(--bb-border) !important; }
+.badge.bg-secondary, .text-bg-secondary{ background-color:#6c757d !important; }
+
+/* Subtle shadow */
+.card.shadow-sm{ box-shadow: 0 .125rem .25rem rgba(0,0,0,.075); }

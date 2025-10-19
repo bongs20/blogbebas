@@ -2,7 +2,7 @@ from django import forms
 from django.utils.text import slugify
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
-from .models import Post, Comment, Category, UserProfile
+from .models import Post, Comment, Category, UserProfile, Tag
 
 
 class RegisterForm(UserCreationForm):
@@ -46,13 +46,14 @@ class RegisterForm(UserCreationForm):
 class PostForm(forms.ModelForm):
     attachment = forms.FileField(required=False)
     attachment_url = forms.URLField(required=False)
+    tags = forms.CharField(required=False, help_text='Comma-separated tags')
     class Meta:
         model = Post
         fields = ['category', 'title', 'content']
         widgets = {
             'category': forms.Select(attrs={'class': 'form-select'}),
             'title': forms.TextInput(attrs={'class': 'form-control'}),
-            'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 6}),
+            'content': forms.Textarea(attrs={'class': 'form-control markdown-input', 'rows': 8, 'placeholder': 'Tulis konten dengan Markdown...'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -88,6 +89,9 @@ class PostForm(forms.ModelForm):
         url = cleaned.get('attachment_url')
         if url is not None and isinstance(url, str):
             cleaned['attachment_url'] = url.strip()
+        # normalize tags
+        t = (self.data.get('tags') or '').strip() if getattr(self, 'data', None) else ''
+        cleaned['tags'] = ','.join([s.strip() for s in t.split(',') if s.strip()]) if t else ''
         return cleaned
 
     # No approval gating; anyone can select any category
@@ -104,10 +108,11 @@ class CommentForm(forms.ModelForm):
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
-        fields = ['name', 'slug']
+        fields = ['name', 'slug', 'description', 'icon']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'slug': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Deskripsi komunitas'}),
         }
 
     def clean(self):
@@ -119,6 +124,10 @@ class CategoryForm(forms.ModelForm):
         elif slug:
             cleaned['slug'] = slugify(slug)
         return cleaned
+
+
+class CommunitySearchForm(forms.Form):
+    q = forms.CharField(required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Cari komunitas...'}))
 
 
 class ProfileForm(forms.ModelForm):

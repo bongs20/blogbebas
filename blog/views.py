@@ -5,9 +5,10 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Count, Sum, Value, Q
 from django.utils import timezone
-from .models import Post, Comment, Vote, Category, PostAttachment, CommentAttachment
+from .models import Post, Comment, Vote, Category, PostAttachment, CommentAttachment, Tag
 from .forms import RegisterForm, PostForm, CommentForm, CategoryForm, ProfileForm
 from django.contrib.auth.models import User
+from django.utils.text import slugify
 
 
 def register_view(request):
@@ -81,12 +82,19 @@ def home(request, category_slug=None):
 
 @login_required
 def category_create(request):
+    # Require 'active' badge: simple heuristic using total upvotes on user's posts
+    total_upvotes = Vote.objects.filter(post__author=request.user, value=1).count()
+    is_active_user = total_upvotes >= 5
+    if not is_active_user:
+        messages.error(request, 'Kamu perlu badge Active (≥5 upvote total) untuk membuat komunitas.')
+        return redirect('home')
     if request.method == 'POST':
         form = CategoryForm(request.POST)
         if form.is_valid():
             category = form.save(commit=False)
             category.created_by = request.user
             category.save()
+            category.moderators.add(request.user)
             messages.success(request, 'Category created.')
             return redirect('home')
     else:
@@ -160,6 +168,17 @@ def post_create(request):
             post = form.save(commit=False)
             post.author = request.user
             post.save()
+            # Save tags
+            tags_str = form.cleaned_data.get('tags') or ''
+            if tags_str and post.category:
+                tag_names = [s.strip() for s in tags_str.split(',') if s.strip()]
+                tag_objs = []
+                for name in tag_names:
+                    slug = slugify(name)
+                    t, _ = Tag.objects.get_or_create(community=post.category, slug=slug, defaults={'name': name})
+                    tag_objs.append(t)
+                if tag_objs:
+                    post.tags.set(tag_objs)
             # Save attachment if provided
             f = form.cleaned_data.get('attachment')
             url = form.cleaned_data.get('attachment_url')
@@ -181,6 +200,18 @@ def post_edit(request, pk):
         form = PostForm(request.POST, request.FILES, instance=post)
         if form.is_valid():
             post = form.save()
+            tags_str = form.cleaned_data.get('tags') or ''
+            if post.category:
+                if tags_str:
+                    tag_names = [s.strip() for s in tags_str.split(',') if s.strip()]
+                    tag_objs = []
+                    for name in tag_names:
+                        slug = slugify(name)
+                        t, _ = Tag.objects.get_or_create(community=post.category, slug=slug, defaults={'name': name})
+                        tag_objs.append(t)
+                    post.tags.set(tag_objs)
+                else:
+                    post.tags.clear()
             f = form.cleaned_data.get('attachment')
             url = form.cleaned_data.get('attachment_url')
             if f or url:
@@ -277,3 +308,13 @@ def profile_settings(request):
     else:
         form = ProfileForm(instance=profile)
     return render(request, 'profile_settings.html', {'form': form})
+
+
+def communities(request):
+    q = request.GET.get('q', '').strip()
+    qs = Category.objects.all().order_by('-is_verified', 'name')
+    if q:
+        qs = qs.filter(Q(name__icontains=q) | Q(slug__icontains=q) | Q(description__icontains=q))
+    paginator = Paginator(qs, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    return render(request, 'communities.html', {'page_obj': page_obj, 'q': q})

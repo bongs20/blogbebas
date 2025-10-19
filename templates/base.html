@@ -9,8 +9,8 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link href="/static/site.css" rel="stylesheet">
   </head>
-  <body>
-  <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+  <body data-theme="light">
+  <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom" id="topbar">
       <div class="container-fluid">
     <a class="navbar-brand fw-bold d-flex flex-column lh-1" href="/">
       <span>BlogBebas</span>
@@ -20,7 +20,10 @@
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbar">
-          <ul class="navbar-nav ms-auto">
+          <ul class="navbar-nav ms-auto align-items-center gap-2">
+            <li class="nav-item">
+              <button id="themeToggle" class="btn btn-sm btn-outline-secondary" type="button"><i class="bi bi-moon"></i></button>
+            </li>
             {% if user.is_authenticated %}
             <li class="nav-item d-flex align-items-center gap-2">
               <a class="nav-link mb-0 d-flex align-items-center gap-2" href="{% url 'profile' user.username %}">
@@ -33,6 +36,7 @@
               </a>
               {% if is_admin_user %}<span class="badge text-bg-warning">Admin</span>{% endif %}
             </li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'communities' %}"><i class="bi bi-people"></i> Komunitas</a></li>
             {% if is_admin_user %}
             <li class="nav-item"><a class="nav-link" href="/admin/"><i class="bi bi-speedometer2"></i> Admin</a></li>
             {% endif %}
@@ -60,5 +64,20 @@
     </a>
     {% endif %}
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    (function(){
+      const key='bb_theme';
+      const root=document.body;
+      const btn=document.getElementById('themeToggle');
+      function apply(t){
+        root.setAttribute('data-theme', t);
+        const nav=document.getElementById('topbar');
+        if (t==='dark') { nav.classList.remove('navbar-light','bg-light'); nav.classList.add('navbar-dark','bg-dark'); btn.innerHTML='<i class="bi bi-sun"></i>'; }
+        else { nav.classList.add('navbar-light','bg-light'); nav.classList.remove('navbar-dark','bg-dark'); btn.innerHTML='<i class="bi bi-moon"></i>'; }
+      }
+      apply(localStorage.getItem(key)||'light');
+      btn?.addEventListener('click',()=>{ const next = (root.getAttribute('data-theme')==='dark')?'light':'dark'; localStorage.setItem(key,next); apply(next);});
+    })();
+  </script>
   </body>
 </html>

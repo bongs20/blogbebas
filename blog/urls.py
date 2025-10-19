@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     path('', views.home, name='home'),
     path('r/<slug:category_slug>/', views.home, name='category'),
+    path('communities/', views.communities, name='communities'),
     path('categories/new/', views.category_create, name='category_create'),
     path('categories/<slug:slug>/verify/', views.category_verify, name='category_verify'),
     path('categories/<slug:slug>/unverify/', views.category_unverify, name='category_unverify'),

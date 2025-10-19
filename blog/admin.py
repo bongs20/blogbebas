@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Post, Comment, Vote, Category, PostAttachment, CommentAttachment
+from .models import Post, Comment, Vote, Category, PostAttachment, CommentAttachment, Tag
 
 # Admin branding
 admin.site.site_header = 'BlogBebas Administration'
@@ -17,8 +17,9 @@ class PostAdmin(admin.ModelAdmin):
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('name', 'slug', 'is_verified', 'created_by', 'created_at')
     list_filter = ('is_verified',)
-    search_fields = ('name', 'slug')
+    search_fields = ('name', 'slug', 'description')
     prepopulated_fields = {"slug": ("name",)}
+    filter_horizontal = ('moderators',)
     actions = ['mark_verified', 'mark_unverified']
 
     def mark_verified(self, request, queryset):
@@ -48,3 +49,10 @@ class PostAttachmentAdmin(admin.ModelAdmin):
 @admin.register(CommentAttachment)
 class CommentAttachmentAdmin(admin.ModelAdmin):
     list_display = ('comment', 'file', 'url', 'content_type', 'created_at')
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug', 'community')
+    search_fields = ('name', 'slug', 'community__name', 'community__slug')
+    list_filter = ('community',)
