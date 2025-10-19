@@ -23,7 +23,7 @@
     </div>
     <div class="mb-3">
       <label class="form-label">Tags</label>
-      <input type="text" name="tags" class="form-control" placeholder="tag1, tag2" value="{{ request.POST.tags|default:'' }}">
+  <input type="text" name="tags" class="form-control" placeholder="tag1, tag2" value="{% if request.POST.tags %}{{ request.POST.tags }}{% elif post and post.tags.all %}{{ post.tags.all|join:', ' }}{% else %}{% endif %}">
       <div class="form-text">Pisahkan dengan koma. Contoh: tips,python</div>
     </div>
     <div class="mb-3">

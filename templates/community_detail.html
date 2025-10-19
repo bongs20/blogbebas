@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block content %}
+  <div class="d-flex align-items-center gap-3 mb-3">
+    {% if community.icon %}<img src="{{ community.icon.url }}" class="rounded" width="48" height="48" alt="">{% else %}<i class="bi bi-people fs-1"></i>{% endif %}
+    <div>
+      <h2 class="mb-0">r/{{ community.slug }}</h2>
+  <div class="text-muted">{{ community.name }}{% if community.is_verified %} <i class="bi bi-patch-check-fill text-info" title="Verified"></i>{% endif %} · {{ members_count }} anggota</div>
+      {% if community.description %}<div class="small text-muted">{{ community.description }}</div>{% endif %}
+      <div class="small">Pengelola: {% if community.created_by %}<a href="{% url 'profile' community.created_by.username %}">{{ community.created_by.username }}</a>{% else %}-{% endif %} · Moderator: {{ community.moderators.count }}</div>
+    </div>
+    <div class="ms-auto">
+      {% if user.is_authenticated %}
+        {% if is_member %}
+          <a class="btn btn-sm btn-outline-secondary" href="{% url 'community_leave' community.slug %}">Tinggalkan</a>
+        {% else %}
+          <a class="btn btn-sm btn-primary" href="{% url 'community_join' community.slug %}">Gabung</a>
+        {% endif %}
+        {% if is_admin_user %}
+          <a class="btn btn-sm btn-outline-primary" href="{% url 'category_verify' community.slug %}">{% if community.is_verified %}Unverify{% else %}Verify{% endif %}</a>
+          <a class="btn btn-sm btn-outline-secondary" href="{% url 'community_edit' community.slug %}">Edit</a>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+  {% if can_moderate %}
+    <div class="mb-3 small">
+      <strong>Moderator:</strong>
+      {% for m in community.moderators.all %}
+        <span class="badge text-bg-secondary me-1">{{ m.username }} {% if community.created_by and m == community.created_by %}(owner){% endif %}</span>
+        {% if can_owner and m != community.created_by %}<a class="link-danger small me-2" href="{% url 'moderator_remove' community.slug m.username %}">remove</a>{% endif %}
+      {% empty %}
+        <span class="text-muted">Belum ada moderator lain.</span>
+      {% endfor %}
+      {% if can_owner %} · <a href="{% url 'moderator_add' community.slug %}">Tambah moderator</a>{% endif %}
+    </div>
+  {% endif %}
+
+  {% for post in posts %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          <h5 class="card-title mb-1"><a class="text-decoration-none" href="{% url 'post_detail' post.pk %}">{{ post.title }}</a></h5>
+          <div class="d-flex align-items-center gap-2">
+            {% if post.is_pinned %}<span class="badge text-bg-warning">Pinned</span>{% endif %}
+            <span class="badge bg-secondary">Score {{ post.score|default:0 }}</span>
+          </div>
+        </div>
+        <div class="text-muted small mb-2">
+          oleh <a href="{% url 'profile' post.author.username %}">{{ post.author }}</a> • {{ post.created_at|naturaltime }}
+        </div>
+        <p class="mb-2">{{ post.content|truncatechars:160 }}</p>
+        <div class="d-flex gap-2">
+          <a class="btn btn-sm btn-outline-primary" href="{% url 'post_detail' post.pk %}">Buka</a>
+          {% if can_moderate %}
+            <a class="btn btn-sm btn-outline-warning" href="{% url 'post_pin_toggle' post.pk %}">{% if post.is_pinned %}Unpin{% else %}Pin{% endif %}</a>
+            <a class="btn btn-sm btn-outline-danger" href="{% url 'post_remove_toggle' post.pk %}">{% if post.is_removed %}Unremove{% else %}Remove{% endif %}</a>
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'post_lock_toggle' post.pk %}">{% if post.comments_locked %}Unlock Comments{% else %}Lock Comments{% endif %}</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <p class="text-muted">Belum ada post.</p>
+  {% endfor %}
+{% endblock %}

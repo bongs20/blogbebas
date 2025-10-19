@@ -11,7 +11,12 @@
       <h3 class="mb-0">{{ profile_user.profile.display_name|default:profile_user.username }}</h3>
       <div class="text-muted">
         @{{ profile_user.username }}
-        {% if badge %}<span class="badge text-bg-{{ badge.1 }} ms-2">{{ badge.0 }}</span>{% endif %}
+        {% if profile_user.profile.custom_badge_label %}
+          <span class="badge text-bg-{{ profile_user.profile.custom_badge_style|default:'secondary' }} ms-2">{{ profile_user.profile.custom_badge_label }}</span>
+        {% elif badge %}
+          <span class="badge text-bg-{{ badge.1 }} ms-2">{{ badge.0 }}</span>
+        {% endif %}
+        {% if profile_user.profile.active_badge %}<span class="badge text-bg-success ms-1">Active</span>{% endif %}
         {% if profile_user.is_staff %}<span class="badge text-bg-warning ms-1">Admin</span>{% endif %}
       </div>
     </div>

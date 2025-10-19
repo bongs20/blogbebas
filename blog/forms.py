@@ -138,3 +138,10 @@ class ProfileForm(forms.ModelForm):
             'display_name': forms.TextInput(attrs={'class': 'form-control'}),
             'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
         }
+
+
+class ModeratorAddForm(forms.Form):
+    username = forms.CharField(
+        label='Nama pengguna',
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'username'})
+    )

@@ -10,9 +10,12 @@
     {% else %}
       <img src="/static/img/default-avatar.svg" alt="avatar" class="rounded-circle" width="24" height="24">
     {% endif %}
-    by <a href="{% url 'profile' post.author.username %}">{{ post.author }}</a> {% if post.author.is_staff %}<span class="badge text-bg-warning">Admin</span>{% endif %} • {{ post.created_at|naturaltime }}
-  {% if post.category %} • <a href="{% url 'category' post.category.slug %}">{{ post.category.name }}</a>{% if post.category.is_verified %} <i class="bi bi-patch-check-fill text-info" title="Verified"></i>{% endif %}{% endif %}
+  di <a href="{% url 'profile' post.author.username %}">{{ post.author }}</a> {% if post.author.is_staff %}<span class="badge text-bg-warning">Admin</span>{% endif %} • {{ post.created_at|naturaltime }}
+  {% if post.category %} • <a href="{% url 'category' post.category.slug %}">r/{{ post.category.slug }}</a>{% if post.category.is_verified %} <i class="bi bi-patch-check-fill text-info" title="Verified"></i>{% endif %}{% endif %}
   </p>
+  {% if post.is_removed %}
+    <div class="alert alert-warning">Post ini dihapus oleh moderator.</div>
+  {% endif %}
   <div class="mb-3">{{ post.content|markdown_safe|safe }}</div>
   {% if post.tags.all %}
     <div class="mb-2">
@@ -49,10 +52,15 @@
       <a href="{% url 'post_edit' post.pk %}" class="btn btn-sm btn-primary ms-2">Edit</a>
       <form action="{% url 'post_delete' post.pk %}" method="post" class="d-inline">{% csrf_token %}<button class="btn btn-sm btn-danger">Delete</button></form>
     {% endif %}
+  {% if can_moderate %}
+      <a class="btn btn-sm btn-outline-warning ms-2" href="{% url 'post_pin_toggle' post.pk %}">{% if post.is_pinned %}Unpin{% else %}Pin{% endif %}</a>
+      <a class="btn btn-sm btn-outline-danger" href="{% url 'post_remove_toggle' post.pk %}">{% if post.is_removed %}Unremove{% else %}Remove{% endif %}</a>
+      <a class="btn btn-sm btn-outline-secondary" href="{% url 'post_lock_toggle' post.pk %}">{% if post.comments_locked %}Unlock Comments{% else %}Lock Comments{% endif %}</a>
+    {% endif %}
   </div>
 
   <hr>
-  <h4>Comments</h4>
+  <h4>Comments {% if post.comments_locked %}<span class="badge text-bg-secondary">Locked</span>{% endif %}</h4>
   {% for comment in comments %}
     <div class="border rounded p-2 mb-2">
       <div class="d-flex align-items-center gap-2 mb-1">
@@ -73,7 +81,7 @@
   {% endfor %}
 
   <hr>
-  {% if user.is_authenticated %}
+  {% if user.is_authenticated and not post.comments_locked %}
     <h5>Add a comment</h5>
     <form method="post" enctype="multipart/form-data">{% csrf_token %}
       <div class="mb-3">{{ form.content }}</div>
@@ -85,7 +93,9 @@
       </div>
       <button class="btn btn-primary"><i class="bi bi-send"></i> Post Comment</button>
     </form>
-  {% else %}
+  {% elif not user.is_authenticated %}
     <p><a href="{% url 'login' %}">Login</a> to comment.</p>
+  {% else %}
+    <p class="text-muted">Komentar dikunci oleh moderator.</p>
   {% endif %}
 {% endblock %}

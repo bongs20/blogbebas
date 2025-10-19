@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Post, Comment, Vote, Category, PostAttachment, CommentAttachment, Tag
+from .models import Post, Comment, Vote, Category, PostAttachment, CommentAttachment, Tag, UserProfile
 
 # Admin branding
 admin.site.site_header = 'BlogBebas Administration'
@@ -9,8 +9,10 @@ admin.site.index_title = 'Manage BlogBebas'
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
-    list_display = ('title', 'author', 'category', 'created_at')
-    list_filter = ('category', 'author')
+    list_display = ('title', 'author', 'category', 'is_pinned', 'is_removed', 'comments_locked', 'created_at')
+    list_filter = ('category', 'author', 'is_pinned', 'is_removed', 'comments_locked')
+    search_fields = ('title', 'content')
+from .models import Post, Comment, Vote, Category, PostAttachment, CommentAttachment, Tag, UserProfile, CommunityMember
 
 
 @admin.register(Category)
@@ -24,11 +26,11 @@ class CategoryAdmin(admin.ModelAdmin):
 
     def mark_verified(self, request, queryset):
         queryset.update(is_verified=True)
-    mark_verified.short_description = 'Mark selected categories as verified'
+    mark_verified.short_description = 'Tandai terverifikasi'
 
     def mark_unverified(self, request, queryset):
         queryset.update(is_verified=False)
-    mark_unverified.short_description = 'Mark selected categories as unverified'
+    mark_unverified.short_description = 'Batalkan verifikasi'
 
 
 @admin.register(Comment)
@@ -56,3 +58,26 @@ class TagAdmin(admin.ModelAdmin):
     list_display = ('name', 'slug', 'community')
     search_fields = ('name', 'slug', 'community__name', 'community__slug')
     list_filter = ('community',)
+
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'display_name', 'active_badge', 'custom_badge_label', 'custom_badge_style', 'created_at')
+    search_fields = ('user__username', 'display_name', 'custom_badge_label')
+    list_filter = ('active_badge',)
+    actions = ['grant_active', 'revoke_active']
+
+    def grant_active(self, request, queryset):
+        queryset.update(active_badge=True)
+    grant_active.short_description = 'Beri badge Active'
+
+    def revoke_active(self, request, queryset):
+        queryset.update(active_badge=False)
+    revoke_active.short_description = 'Cabut badge Active'
+
+
+@admin.register(CommunityMember)
+class CommunityMemberAdmin(admin.ModelAdmin):
+    list_display = ('community', 'user', 'role', 'joined_at')
+    list_filter = ('role', 'community')
+    search_fields = ('community__name', 'community__slug', 'user__username')

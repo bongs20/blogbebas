@@ -2,7 +2,7 @@
 {% block content %}
   <h1>Buat Komunitas</h1>
   <p class="text-muted">Syarat: badge Active (≥5 upvote total). Kamu otomatis menjadi pengelola.</p>
-  <form method="post">{% csrf_token %}
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}
     <div class="mb-3">
       <label class="form-label">Nama</label>
       {{ form.name }}
@@ -20,6 +20,6 @@
       <label class="form-label">Ikon (opsional)</label>
       {{ form.icon }}
     </div>
-    <button class="btn btn-primary">Submit</button>
+  <button class="btn btn-primary">Buat Komunitas</button>
   </form>
 {% endblock %}

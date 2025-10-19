@@ -5,10 +5,11 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Count, Sum, Value, Q
 from django.utils import timezone
-from .models import Post, Comment, Vote, Category, PostAttachment, CommentAttachment, Tag
-from .forms import RegisterForm, PostForm, CommentForm, CategoryForm, ProfileForm
+from .models import Post, Comment, Vote, Category, PostAttachment, CommentAttachment, Tag, CommunityMember
+from .forms import RegisterForm, PostForm, CommentForm, CategoryForm, ProfileForm, ModeratorAddForm
 from django.contrib.auth.models import User
 from django.utils.text import slugify
+from .utils import in_group, GROUP_WEBSITE_ADMINS, GROUP_ACTIVE
 
 
 def register_view(request):
@@ -55,6 +56,9 @@ def home(request, category_slug=None):
     else:
         posts_qs = posts_qs.order_by('-created_at')
 
+    # Hide removed posts unless staff/mod
+    if current_category and not (current_category.can_moderate(request.user) or in_group(request.user, GROUP_WEBSITE_ADMINS)):
+        posts_qs = posts_qs.filter(is_removed=False)
     paginator = Paginator(posts_qs, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -80,22 +84,43 @@ def home(request, category_slug=None):
     })
 
 
+def community_detail(request, slug):
+    community = get_object_or_404(Category, slug=slug)
+    is_member = False
+    if request.user.is_authenticated:
+        is_member = CommunityMember.objects.filter(community=community, user=request.user).exists()
+    can_moderate = community.can_moderate(request.user)
+    can_owner = community.is_owner(request.user)
+    posts = Post.objects.filter(category=community)
+    if not can_moderate:
+        posts = posts.filter(is_removed=False)
+    posts = posts.select_related('author__profile').annotate(score=Sum('votes__value')).order_by('-is_pinned', '-created_at')
+    return render(request, 'community_detail.html', {
+        'community': community,
+        'is_member': is_member,
+        'posts': posts,
+        'can_moderate': can_moderate,
+    'members_count': CommunityMember.objects.filter(community=community).count(),
+    'can_owner': can_owner,
+    })
+
+
 @login_required
 def category_create(request):
-    # Require 'active' badge: simple heuristic using total upvotes on user's posts
+    # Require 'active' badge: allow via upvotes OR admin-granted badge on profile
     total_upvotes = Vote.objects.filter(post__author=request.user, value=1).count()
-    is_active_user = total_upvotes >= 5
+    is_active_user = (total_upvotes >= 5) or getattr(getattr(request.user, 'profile', None), 'active_badge', False) or in_group(request.user, GROUP_ACTIVE)
     if not is_active_user:
         messages.error(request, 'Kamu perlu badge Active (≥5 upvote total) untuk membuat komunitas.')
         return redirect('home')
     if request.method == 'POST':
-        form = CategoryForm(request.POST)
+        form = CategoryForm(request.POST, request.FILES)
         if form.is_valid():
             category = form.save(commit=False)
             category.created_by = request.user
             category.save()
             category.moderators.add(request.user)
-            messages.success(request, 'Category created.')
+            messages.success(request, 'Komunitas berhasil dibuat.')
             return redirect('home')
     else:
         form = CategoryForm()
@@ -104,7 +129,7 @@ def category_create(request):
 
 @login_required
 def category_verify(request, slug):
-    if not request.user.is_staff:
+    if not in_group(request.user, GROUP_WEBSITE_ADMINS):
         messages.error(request, 'Not allowed')
         return redirect('home')
     cat = get_object_or_404(Category, slug=slug)
@@ -116,7 +141,7 @@ def category_verify(request, slug):
 
 @login_required
 def category_unverify(request, slug):
-    if not request.user.is_staff:
+    if not in_group(request.user, GROUP_WEBSITE_ADMINS):
         messages.error(request, 'Not allowed')
         return redirect('home')
     cat = get_object_or_404(Category, slug=slug)
@@ -128,19 +153,26 @@ def category_unverify(request, slug):
 
 @login_required
 def category_delete(request, slug):
-    if not request.user.is_staff:
+    if not in_group(request.user, GROUP_WEBSITE_ADMINS):
         messages.error(request, 'Not allowed')
         return redirect('home')
     cat = get_object_or_404(Category, slug=slug)
     cat.delete()
-    messages.success(request, 'Category deleted')
+    messages.success(request, 'Komunitas dihapus')
     return redirect('home')
 
 
 def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
+    if post.is_removed and not (post.category and post.category.can_moderate(request.user)) and not in_group(request.user, GROUP_WEBSITE_ADMINS):
+        messages.error(request, 'Post ini telah dihapus oleh moderator')
+        return redirect('home')
     comments = Comment.objects.filter(post=post).select_related('author__profile').order_by('created_at')
+    can_moderate = bool(post.category and post.category.can_moderate(request.user)) or in_group(request.user, GROUP_WEBSITE_ADMINS)
     if request.method == 'POST':
+        if post.comments_locked and not can_moderate:
+            messages.error(request, 'Komentar dikunci oleh moderator')
+            return redirect('post_detail', pk=post.pk)
         if not request.user.is_authenticated:
             return redirect('login')
         form = CommentForm(request.POST, request.FILES)
@@ -157,7 +189,63 @@ def post_detail(request, pk):
             return redirect('post_detail', pk=post.pk)
     else:
         form = CommentForm()
-    return render(request, 'post_detail.html', {'post': post, 'comments': comments, 'form': form})
+    return render(request, 'post_detail.html', {'post': post, 'comments': comments, 'form': form, 'can_moderate': can_moderate})
+
+
+@login_required
+def community_edit(request, slug):
+    community = get_object_or_404(Category, slug=slug)
+    if not community.can_moderate(request.user):
+        messages.error(request, 'Tidak diizinkan')
+        return redirect('community_detail', slug=slug)
+    if request.method == 'POST':
+        form = CategoryForm(request.POST, request.FILES, instance=community)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Komunitas diperbarui')
+            return redirect('community_detail', slug=slug)
+    else:
+        form = CategoryForm(instance=community)
+    return render(request, 'category_form.html', {'form': form})
+
+
+@login_required
+def moderator_add(request, slug):
+    community = get_object_or_404(Category, slug=slug)
+    if not community.is_owner(request.user):
+        messages.error(request, 'Hanya pemilik yang dapat menambah moderator')
+        return redirect('community_detail', slug=slug)
+    if request.method == 'POST':
+        form = ModeratorAddForm(request.POST)
+        if form.is_valid():
+            uname = form.cleaned_data['username'].strip()
+            try:
+                u = User.objects.get(username=uname)
+            except User.DoesNotExist:
+                messages.error(request, 'User tidak ditemukan')
+            else:
+                community.moderators.add(u)
+                messages.success(request, f'{u.username} ditambahkan sebagai moderator')
+            return redirect('community_detail', slug=slug)
+    else:
+        form = ModeratorAddForm()
+    return render(request, 'moderator_add.html', {'form': form, 'community': community})
+
+
+@login_required
+def moderator_remove(request, slug, username):
+    community = get_object_or_404(Category, slug=slug)
+    if not community.is_owner(request.user):
+        messages.error(request, 'Hanya pemilik yang dapat menghapus moderator')
+        return redirect('community_detail', slug=slug)
+    try:
+        u = User.objects.get(username=username)
+    except User.DoesNotExist:
+        messages.error(request, 'User tidak ditemukan')
+    else:
+        community.moderators.remove(u)
+        messages.info(request, f'{u.username} dihapus dari moderator')
+    return redirect('community_detail', slug=slug)
 
 
 @login_required
@@ -193,7 +281,7 @@ def post_create(request):
 @login_required
 def post_edit(request, pk):
     post = get_object_or_404(Post, pk=pk)
-    if post.author != request.user and not request.user.is_staff:
+    if post.author != request.user and not in_group(request.user, GROUP_WEBSITE_ADMINS):
         messages.error(request, 'Not allowed')
         return redirect('post_detail', pk=pk)
     if request.method == 'POST':
@@ -225,7 +313,7 @@ def post_edit(request, pk):
 @login_required
 def post_delete(request, pk):
     post = get_object_or_404(Post, pk=pk)
-    if post.author != request.user and not request.user.is_staff:
+    if post.author != request.user and not in_group(request.user, GROUP_WEBSITE_ADMINS):
         messages.error(request, 'Not allowed')
         return redirect('post_detail', pk=pk)
     if request.method == 'POST':
@@ -251,7 +339,7 @@ def vote(request, pk, action):
 @login_required
 def comment_delete(request, pk):
     comment = get_object_or_404(Comment, pk=pk)
-    if comment.author != request.user and not request.user.is_staff:
+    if comment.author != request.user and not in_group(request.user, GROUP_WEBSITE_ADMINS):
         messages.error(request, 'Not allowed')
         return redirect('post_detail', pk=comment.post.pk)
     if request.method == 'POST':
@@ -264,7 +352,7 @@ def comment_delete(request, pk):
 @login_required
 def comment_edit(request, pk):
     comment = get_object_or_404(Comment, pk=pk)
-    if comment.author != request.user and not request.user.is_staff:
+    if comment.author != request.user and not in_group(request.user, GROUP_WEBSITE_ADMINS):
         messages.error(request, 'Not allowed')
         return redirect('post_detail', pk=comment.post.pk)
     if request.method == 'POST':
@@ -275,6 +363,55 @@ def comment_edit(request, pk):
     else:
         form = CommentForm(instance=comment)
     return render(request, 'comment_form.html', {'form': form, 'comment': comment})
+
+
+@login_required
+def community_join(request, slug):
+    community = get_object_or_404(Category, slug=slug)
+    CommunityMember.objects.get_or_create(community=community, user=request.user)
+    messages.success(request, f'Gabung r/{community.slug}')
+    return redirect('community_detail', slug=slug)
+
+
+@login_required
+def community_leave(request, slug):
+    community = get_object_or_404(Category, slug=slug)
+    CommunityMember.objects.filter(community=community, user=request.user).delete()
+    messages.info(request, f'Keluar dari r/{community.slug}')
+    return redirect('community_detail', slug=slug)
+
+
+@login_required
+def post_pin_toggle(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    if not (post.category and post.category.can_moderate(request.user)):
+        messages.error(request, 'Tidak diizinkan')
+        return redirect('post_detail', pk=pk)
+    post.is_pinned = not post.is_pinned
+    post.save(update_fields=['is_pinned'])
+    return redirect('post_detail', pk=pk)
+
+
+@login_required
+def post_remove_toggle(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    if not (post.category and post.category.can_moderate(request.user)):
+        messages.error(request, 'Tidak diizinkan')
+        return redirect('post_detail', pk=pk)
+    post.is_removed = not post.is_removed
+    post.save(update_fields=['is_removed'])
+    return redirect('post_detail', pk=pk)
+
+
+@login_required
+def post_lock_toggle(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    if not (post.category and post.category.can_moderate(request.user)):
+        messages.error(request, 'Tidak diizinkan')
+        return redirect('post_detail', pk=pk)
+    post.comments_locked = not post.comments_locked
+    post.save(update_fields=['comments_locked'])
+    return redirect('post_detail', pk=pk)
 
 
 def user_profile(request, username):

@@ -12,10 +12,27 @@ body { padding-bottom: 40px; }
 
 /* Theming */
 :root{
-	--bb-bg:#ffffff; --bb-text:#212529; --bb-card:#ffffff; --bb-border:#e9ecef;
+	--bb-bg:#ffffff;
+	--bb-text:#212529;
+	--bb-card:#ffffff;
+	--bb-border:#e9ecef;
+	--bb-muted:#6c757d;
+	--bb-link:#0d6efd;
+	--bb-link-hover:#0b5ed7;
+	--bb-input-bg:#ffffff;
+	--bb-input-border:#ced4da;
 }
 [data-theme="dark"]{
-	--bb-bg:#0f1115; --bb-text:#e6e6e6; --bb-card:#12151c; --bb-border:#2a2f3a;
+	--bb-bg:#0f1115;
+	--bb-text:#f8fafc; /* slightly brighter for better contrast */
+	--bb-card:#141824; /* slightly brighter card for readability */
+	--bb-border:#2a2f3a;
+	--bb-muted:#c3cbd7; /* increase muted contrast */
+	--bb-link:#4b7cc5;  /* more subdued blue */
+	--bb-link-hover:#6c8ed9; /* gentle hover */
+	--bb-link-visited:#8ea4d8; /* dimmer visited links */
+	--bb-input-bg:#0f1420;
+	--bb-input-border:#3b465c;
 }
 body{ background:var(--bb-bg); color:var(--bb-text); }
 .card{ background:var(--bb-card); border-color:var(--bb-border); }
@@ -23,5 +40,78 @@ body{ background:var(--bb-bg); color:var(--bb-text); }
 .navbar, .dropdown-menu{ border-color:var(--bb-border) !important; }
 .badge.bg-secondary, .text-bg-secondary{ background-color:#6c757d !important; }
 
+/* Navbar theming */
+.navbar{ background: var(--bb-card) !important; }
+.navbar .navbar-brand, .navbar .nav-link { color: var(--bb-text) !important; }
+[data-theme="dark"] .navbar .navbar-toggler { border-color: rgba(255,255,255,.25); }
+[data-theme="dark"] .navbar .navbar-toggler-icon { filter: invert(1); }
+
+/* Links & muted text */
+a{ color: var(--bb-link); }
+a:hover{ color: var(--bb-link-hover); }
+.text-muted{ color: var(--bb-muted) !important; }
+
+/* Improve link discoverability on dark mode without being too bright */
+[data-theme="dark"] a{
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+[data-theme="dark"] a:visited{ color: var(--bb-link-visited); }
+
+/* Dropdown menu */
+.dropdown-menu{ background: var(--bb-card); color: var(--bb-text); }
+.dropdown-item{ color: var(--bb-text); }
+.dropdown-item:hover, .dropdown-item:focus{ background: rgba(255,255,255,.06); color: var(--bb-text); }
+
+/* Forms */
+.form-control, .form-select, .form-control:focus, .form-select:focus{
+	background: var(--bb-input-bg);
+	color: var(--bb-text);
+	border-color: var(--bb-input-border);
+}
+.form-control::placeholder{ color: var(--bb-muted); }
+
+/* Buttons outline visibility on dark */
+[data-theme="dark"] .btn-outline-secondary{ color:#cbd5e1; border-color:#475569; }
+[data-theme="dark"] .btn-outline-secondary:hover{ background:#334155; color:#e2e8f0; }
+[data-theme="dark"] .btn-outline-primary{ color:#9ac0ff; border-color:#3b82f6; }
+[data-theme="dark"] .btn-outline-primary:hover{ background:#1e40af; color:#e5edff; }
+
+/* Buttons primary on dark: less bright */
+[data-theme="dark"] .btn-primary{ background-color:#2563eb; border-color:#1e40af; }
+[data-theme="dark"] .btn-primary:hover{ background-color:#1d4ed8; border-color:#1e3a8a; }
+
+/* Primary text & badges on dark */
+[data-theme="dark"] .text-primary{ color:#86a0e6 !important; }
+[data-theme="dark"] .badge.bg-primary, [data-theme="dark"] .text-bg-primary{ background-color:#2b54a4 !important; }
+
+/* List group hover */
+[data-theme="dark"] .list-group-item-action:hover{ background:#182032; }
+
+/* Pagination */
+.page-link{ background: var(--bb-card); color: var(--bb-text); border-color: var(--bb-border); }
+.page-item.active .page-link{ background: var(--bb-link); border-color: var(--bb-link); }
+
 /* Subtle shadow */
 .card.shadow-sm{ box-shadow: 0 .125rem .25rem rgba(0,0,0,.075); }
+
+/* Markdown content readability on dark */
+[data-theme="dark"] pre,
+[data-theme="dark"] code,
+[data-theme="dark"] kbd,
+[data-theme="dark"] samp{
+	background-color:#0b1220;
+	color:#e2e8f0;
+	border:1px solid #223047;
+}
+[data-theme="dark"] pre code{ border:0; background:transparent; }
+[data-theme="dark"] blockquote{
+	border-left: 4px solid #2a3a55;
+	color:#d7dee7;
+}
+
+/* Improve focus visibility */
+[data-theme="dark"] a:focus{
+	outline:2px solid #3b82f6;
+	outline-offset: 2px;
+}

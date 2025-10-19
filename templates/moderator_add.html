@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>Tambah Moderator untuk r/{{ community.slug }}</h2>
+  <form method="post">{% csrf_token %}
+    <div class="mb-3">
+      <label class="form-label">Username</label>
+      {{ form.username }}
+    </div>
+    <button class="btn btn-primary">Tambah</button>
+  </form>
+{% endblock %}
