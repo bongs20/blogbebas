@@ -34,6 +34,6 @@ Key features
 - Responsive UI with Bootstrap 5 and mobile FAB
 
 Docs
-- docs/FEATURES.md
+- <a href="docs/FEATURES.md">
 - docs/ARCHITECTURE.md
 - docs/SETUP.md
