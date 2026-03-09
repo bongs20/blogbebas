@@ -47,6 +47,7 @@ class PostForm(forms.ModelForm):
     attachment = forms.FileField(required=False)
     attachment_url = forms.URLField(required=False)
     tags = forms.CharField(required=False, help_text='Comma-separated tags')
+
     class Meta:
         model = Post
         fields = ['category', 'title', 'content']
@@ -100,6 +101,7 @@ class PostForm(forms.ModelForm):
 class CommentForm(forms.ModelForm):
     attachment = forms.FileField(required=False)
     attachment_url = forms.URLField(required=False)
+
     class Meta:
         model = Comment
         fields = ['content']

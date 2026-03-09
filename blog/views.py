@@ -3,7 +3,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Count, Sum, Value, Q
+from django.db.models import Count, Sum, Q
 from django.utils import timezone
 from .models import Post, Comment, Vote, Category, PostAttachment, CommentAttachment, Tag, CommunityMember
 from .forms import RegisterForm, PostForm, CommentForm, CategoryForm, ProfileForm, ModeratorAddForm
@@ -100,8 +100,8 @@ def community_detail(request, slug):
         'is_member': is_member,
         'posts': posts,
         'can_moderate': can_moderate,
-    'members_count': CommunityMember.objects.filter(community=community).count(),
-    'can_owner': can_owner,
+        'members_count': CommunityMember.objects.filter(community=community).count(),
+        'can_owner': can_owner,
     })
 
 

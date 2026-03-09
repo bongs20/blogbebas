@@ -3,23 +3,28 @@
 - Framework: Django 5, SQLite for dev
 - Apps: single app `blog`
 - Models:
-  - Category(name, slug, created_by, is_verified, created_at)
-  - Post(author, category, title, content, created_at, updated_at)
+  - Category(name, slug, created_by, is_verified, description, icon, moderators, created_at)
+  - Post(author, category, title, content, tags, is_pinned, is_removed, comments_locked, created_at, updated_at)
   - Comment(post, author, content, created_at)
   - Vote(post, user, value)
+  - Tag(community, name, slug)
   - PostAttachment(post, file, url, content_type, created_at)
   - CommentAttachment(comment, file, url, content_type, created_at)
-  - UserProfile(user, display_name, bio, avatar, created_at)
-- Forms: RegisterForm, PostForm (with attachment fields), CommentForm (with attachment fields), CategoryForm, ProfileForm
+  - UserProfile(user, display_name, bio, avatar, active_badge, custom_badge_label, custom_badge_style, created_at)
+  - CommunityMember(community, user, role, joined_at)
+- Forms: RegisterForm, PostForm (with attachment + tag fields), CommentForm (with attachment fields), CategoryForm, ProfileForm, ModeratorAddForm, CommunitySearchForm
 - Views:
   - Auth: register, login, logout
   - Home: list posts with score, sort, pagination; categories with search; Posts of the Day
-  - CRUD: posts and comments
+  - Posts: create, edit, delete, detail
   - Voting: toggle up/down
+  - Comments: add (via post_detail), edit, delete
   - Categories: create (user), verify/unverify/delete (admin)
+  - Communities: detail, edit, join, leave; pin/remove/lock post toggles; add/remove moderators
   - Profile: view public profile and edit settings
-- Templates: base, home, post_detail, post_form, auth pages, profile pages, category form
-- Static: site.css, default avatar, favicon
-- Templatetags: form_extras (add_class), media_extras (is_image/is_video/is_audio)
+  - Communities list: paginated, searchable
+- Templates: base, home, post_detail, post_form, comment_form, category_form, community_detail, communities, auth pages, profile pages, moderator_add
+- Static: site.css (dark/light theme), default avatar SVG, favicon SVG
+- Templatetags: form_extras (add_class), media_extras (is_image/is_video/is_audio), markdown_extras
 - Signals: create UserProfile on user creation
-- Management commands: seed_demo to populate users/categories/posts/comments/votes
+- Management commands: seed_demo, setup_role_groups, promote_admin_user, set_community_owner
