@@ -47,14 +47,7 @@ class Post(models.Model):
     is_removed = models.BooleanField(default=False)
     comments_locked = models.BooleanField(default=False)
     # Tags for post (per community)
-    # Declared after Tag class; use string reference to 'Tag'.
     tags = models.ManyToManyField('Tag', related_name='posts', blank=True)
-
-    def score(self):
-        # Backward-compatible method; prefer net_score property.
-        # Use explicit query to satisfy static analyzers.
-        total = Vote.objects.filter(post=self).aggregate(total=Sum('value'))['total']
-        return total or 0
 
     @property
     def net_score(self):
@@ -75,9 +68,6 @@ class Tag(models.Model):
 
     def __str__(self):
         return f'{self.community.slug}:{self.name}'
-
-
-# (tags field declared on Post via string reference)
 
 
 class Comment(models.Model):
@@ -156,6 +146,3 @@ class CommunityMember(models.Model):
 
     def __str__(self):
         return f'{self.user.username} in r/{self.community.slug}'
-
-
-# (helper methods are defined on Category class)

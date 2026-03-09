@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Post, Comment, Vote, Category, PostAttachment, CommentAttachment, Tag, UserProfile
+from .models import Post, Comment, Vote, Category, PostAttachment, CommentAttachment, Tag, UserProfile, CommunityMember
 
 # Admin branding
 admin.site.site_header = 'BlogBebas Administration'
@@ -12,7 +12,6 @@ class PostAdmin(admin.ModelAdmin):
     list_display = ('title', 'author', 'category', 'is_pinned', 'is_removed', 'comments_locked', 'created_at')
     list_filter = ('category', 'author', 'is_pinned', 'is_removed', 'comments_locked')
     search_fields = ('title', 'content')
-from .models import Post, Comment, Vote, Category, PostAttachment, CommentAttachment, Tag, UserProfile, CommunityMember
 
 
 @admin.register(Category)
